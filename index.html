@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Meko Master — Vault</title>
+
+<!-- ✅ JOST BOLD — Google Font -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+
+<!-- Bootstrap 5 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+<!-- Bootstrap Icons -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+
+<style>
+:root {
+  --bg:     #06080d;
+  --bg2:    #0d1117;
+  --bg3:    #131920;
+  --panel:  rgba(13,17,23,0.9);
+  --border: rgba(99,202,255,0.15);
+  --blue:   #63caff;
+  --blue2:  #3b9fd4;
+  --gold:   #ffc847;
+  --red:    #ff5577;
+  --green:  #4dffb0;
+  --purple: #a66cff;
+  --text:   #e8f4ff;
+  --muted:  #4a6278;
+  --font:   'Jost', sans-serif;
+  --mono:   'Space Mono', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* BG */
+.grid-bg{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(99,202,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(99,202,255,.03) 1px,transparent 1px);
+  background-size:40px 40px;animation:gridMove 60s linear infinite}
+@keyframes gridMove{to{background-position:40px 40px}}
+.blob{position:fixed;border-radius:50%;filter:blur(90px);opacity:.14;pointer-events:none;z-index:0;animation:blobF 18s ease-in-out infinite}
+.blob1{width:380px;height:280px;background:#3b9fd4;top:-80px;left:-80px}
+.blob2{width:280px;height:280px;background:#a66cff;bottom:0;right:-60px;animation-delay:-8s}
+.blob3{width:200px;height:200px;background:#ffc847;top:45%;left:52%;animation-delay:-14s;opacity:.08}
+@keyframes blobF{0%,100%{transform:translate(0,0)}40%{transform:translate(18px,-25px)}70%{transform:translate(-12px,18px)}}
+
+/* ─── HEADER ─── */
+header{
+  position:sticky;top:0;z-index:200;
+  background:rgba(6,8,13,.88);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-bottom:1px solid var(--border);
+  padding:13px 14px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px
+}
+.logo{
+  display:flex;align-items:center;gap:9px;
+  font-family:var(--font);font-size:1.3rem;font-weight:900;letter-spacing:-0.5px;
+  background:linear-gradient(120deg,var(--blue),var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  white-space:nowrap
+}
+.logo-ico{
+  width:32px;height:32px;border-radius:9px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--blue2),var(--purple));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:.95rem;-webkit-text-fill-color:white;
+  box-shadow:0 0 14px rgba(99,202,255,.4)
+}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.vault-badge{
+  font-family:var(--mono);font-size:.58rem;
+  color:var(--blue);background:rgba(99,202,255,.1);
+  border:1px solid rgba(99,202,255,.25);
+  padding:3px 8px;border-radius:20px;white-space:nowrap
+}
+.btn-add-hdr{
+  background:linear-gradient(135deg,var(--blue2),var(--blue));
+  border:none;color:#06080d;-webkit-text-fill-color:#06080d;
+  font-family:var(--font);font-weight:800;font-size:.85rem;
+  padding:8px 14px;border-radius:9px;
+  display:flex;align-items:center;gap:6px;
+  cursor:pointer;white-space:nowrap;
+  box-shadow:0 0 16px rgba(99,202,255,.3);
+  transition:transform .15s,box-shadow .15s
+}
+.btn-add-hdr:hover{transform:translateY(-1px);box-shadow:0 4px 22px rgba(99,202,255,.45)}
+
+/* ─── STATS ─── */
+.stats-row{
+  display:flex;border-bottom:1px solid var(--border);
+  overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none
+}
+.stats-row::-webkit-scrollbar{display:none}
+.stat-item{
+  flex:1 0 auto;min-width:68px;
+  display:flex;flex-direction:column;align-items:center;
+  padding:10px 12px;border-right:1px solid var(--border);position:relative;z-index:1
+}
+.stat-item:last-child{border-right:none}
+.stat-num{font-family:var(--font);font-weight:900;font-size:1.25rem;color:var(--blue);line-height:1}
+.stat-lbl{font-family:var(--font);font-size:.6rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+
+/* ─── CONTROLS ─── */
+.top-controls{padding:12px 14px 0;position:relative;z-index:1}
+.search-box{position:relative;margin-bottom:10px}
+.search-box i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.9rem;pointer-events:none}
+.search-inp{
+  width:100%;padding:11px 11px 11px 38px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:11px;
+  color:var(--text);font-family:var(--font);font-weight:500;font-size:.92rem;
+  outline:none;transition:border .18s,box-shadow .18s;-webkit-appearance:none
+}
+.search-inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(99,202,255,.1)}
+.search-inp::placeholder{color:var(--muted)}
+.filter-row{display:flex;gap:7px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.filter-row::-webkit-scrollbar{display:none}
+.ftab{
+  flex-shrink:0;padding:6px 12px;border-radius:20px;
+  font-family:var(--font);font-weight:700;font-size:.73rem;
+  background:var(--bg3);border:1px solid var(--border);color:var(--muted);
+  cursor:pointer;transition:all .15s;white-space:nowrap
+}
+.ftab.active{background:rgba(99,202,255,.12);border-color:rgba(99,202,255,.4);color:var(--blue)}
+
+/* ─── GRID ─── */
+.vault-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:12px;padding:14px 14px 100px;position:relative;z-index:1
+}
+
+/* ─── CARD ─── */
+.vcard{
+  background:var(--panel);border:1px solid var(--border);border-radius:15px;
+  padding:15px;cursor:pointer;position:relative;overflow:hidden;
+  backdrop-filter:blur(10px);transition:transform .2s,box-shadow .2s,border-color .2s;
+  animation:cardIn .35s ease both
+}
+@keyframes cardIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.vcard::after{content:'';position:absolute;inset:0;border-radius:15px;background:linear-gradient(135deg,rgba(99,202,255,.05),transparent 60%);pointer-events:none}
+.vcard:active{transform:scale(.98)}
+@media(hover:hover){.vcard:hover{transform:translateY(-4px);box-shadow:0 8px 32px rgba(99,202,255,.12);border-color:rgba(99,202,255,.35)}}
+.vcard-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:11px}
+.vcard-left{display:flex;align-items:center;gap:11px;min-width:0}
+.vcard-av{
+  width:44px;height:44px;border-radius:12px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--bg3),var(--bg2));border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font);font-weight:900;font-size:1.15rem;color:var(--blue);
+  box-shadow:0 0 10px rgba(99,202,255,.1)
+}
+.vcard-info{min-width:0}
+.vcard-name{font-family:var(--font);font-weight:800;font-size:.98rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.vcard-url{font-family:var(--mono);font-size:.58rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.vcard-del{background:none;border:none;cursor:pointer;color:var(--muted);font-size:.95rem;padding:6px;border-radius:7px;flex-shrink:0;transition:color .15s,background .15s;line-height:1}
+.vcard-del:hover{color:var(--red);background:rgba(255,85,119,.1)}
+.vcard-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.badge-lt{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-family:var(--font);font-weight:700;font-size:.63rem;border:1px solid transparent}
+.bl-email {background:rgba(99,202,255,.1); border-color:rgba(99,202,255,.25);color:var(--blue)}
+.bl-mobile{background:rgba(255,200,71,.1); border-color:rgba(255,200,71,.25);color:var(--gold)}
+.bl-gmail {background:rgba(255,85,119,.1); border-color:rgba(255,85,119,.25);color:var(--red)}
+.bl-apple {background:rgba(166,108,255,.1);border-color:rgba(166,108,255,.25);color:var(--purple)}
+.vcard-note{font-size:.73rem;color:var(--muted);font-style:italic;border-top:1px solid var(--border);padding-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ─── EMPTY ─── */
+.empty-state{grid-column:1/-1;display:flex;flex-direction:column;align-items:center;padding:60px 20px;gap:12px;text-align:center}
+.empty-ico{font-size:3rem;color:rgba(99,202,255,.2);animation:ePulse 3s ease-in-out infinite}
+@keyframes ePulse{0%,100%{opacity:.2;transform:scale(1)}50%{opacity:.38;transform:scale(1.06)}}
+.empty-state h3{font-family:var(--font);font-weight:800;font-size:1.05rem;color:var(--muted)}
+.empty-state p{font-size:.8rem;color:var(--muted);max-width:240px;line-height:1.6}
+
+/* ─── OVERLAY / SHEET ─── */
+.overlay{
+  position:fixed;inset:0;z-index:500;
+  background:rgba(6,8,13,.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .22s
+}
+.overlay.open{opacity:1;pointer-events:all}
+.sheet{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:20px 20px 0 0;width:100%;max-width:100%;
+  max-height:93vh;overflow-y:auto;
+  padding:0 15px 36px;position:relative;
+  box-shadow:0 -8px 60px rgba(0,0,0,.5);
+  transform:translateY(40px);transition:transform .3s cubic-bezier(.22,.97,.6,1.05)
+}
+.overlay.open .sheet{transform:translateY(0)}
+.sheet::-webkit-scrollbar{width:4px}
+.sheet::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.sheet-handle{width:38px;height:4px;border-radius:2px;background:var(--border);margin:12px auto 18px}
+@media(min-width:560px){
+  .overlay{align-items:center;padding:20px}
+  .sheet{border-radius:18px;max-width:480px;padding:26px;transform:translateY(22px) scale(.97)}
+  .sheet-handle{display:none}
+  .overlay.open .sheet{transform:none}
+}
+.sheet-close{
+  position:absolute;top:14px;right:14px;
+  background:var(--bg3);border:1px solid var(--border);color:var(--muted);
+  width:29px;height:29px;border-radius:7px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:.88rem;
+  transition:color .15s,border-color .15s
+}
+.sheet-close:hover{color:var(--text);border-color:var(--blue)}
+.sheet-title{font-family:var(--font);font-weight:900;font-size:1.15rem;display:flex;align-items:center;gap:8px;margin-bottom:18px;color:var(--text)}
+.sheet-title i{color:var(--blue)}
+
+/* ─── FORM ─── */
+.fgrp{margin-bottom:13px}
+.flbl{display:block;font-family:var(--font);font-weight:700;font-size:.68rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px}
+.finp,.ftarea{
+  width:100%;padding:11px 12px;
+  background:var(--bg3);border:1px solid var(--border);border-radius:10px;
+  color:var(--text);font-family:var(--font);font-weight:500;font-size:.9rem;
+  outline:none;resize:none;-webkit-appearance:none;
+  transition:border .18s,box-shadow .18s
+}
+.finp:focus,.ftarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(99,202,255,.1)}
+.finp::placeholder,.ftarea::placeholder{color:var(--muted)}
+.pass-row{position:relative}
+.pass-row .finp{padding-right:40px;font-family:var(--mono);font-size:.82rem}
+.eye-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:.88rem;padding:4px;transition:color .15s}
+.eye-btn:hover{color:var(--blue)}
+.lt-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.lt-btn{
+  display:flex;align-items:center;gap:7px;padding:10px 11px;border-radius:10px;
+  border:1px solid var(--border);background:var(--bg3);color:var(--muted);
+  cursor:pointer;font-family:var(--font);font-weight:700;font-size:.78rem;
+  transition:all .15s;user-select:none
+}
+.lt-btn.on-email {background:rgba(99,202,255,.1); border-color:rgba(99,202,255,.35);color:var(--blue)}
+.lt-btn.on-mobile{background:rgba(255,200,71,.1); border-color:rgba(255,200,71,.35);color:var(--gold)}
+.lt-btn.on-gmail {background:rgba(255,85,119,.1); border-color:rgba(255,85,119,.35);color:var(--red)}
+.lt-btn.on-apple {background:rgba(166,108,255,.1);border-color:rgba(166,108,255,.35);color:var(--purple)}
+.form-acts{display:flex;gap:9px;margin-top:18px}
+.btn-cancel{flex:1;padding:12px;background:var(--bg3);border:1px solid var(--border);color:var(--muted);border-radius:10px;font-family:var(--font);font-weight:700;font-size:.88rem;cursor:pointer;transition:color .15s}
+.btn-cancel:hover{color:var(--text)}
+.btn-save{
+  flex:2;padding:12px;background:linear-gradient(135deg,var(--blue2),var(--blue));border:none;border-radius:10px;
+  color:#06080d;-webkit-text-fill-color:#06080d;font-family:var(--font);font-weight:900;font-size:.88rem;cursor:pointer;
+  box-shadow:0 0 18px rgba(99,202,255,.3);transition:transform .15s,box-shadow .15s
+}
+.btn-save:hover{transform:translateY(-1px);box-shadow:0 4px 22px rgba(99,202,255,.45)}
+
+/* ─── DETAIL ─── */
+.d-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.d-av{
+  width:50px;height:50px;border-radius:14px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--bg3),var(--bg2));border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font);font-weight:900;font-size:1.4rem;color:var(--blue);
+  box-shadow:0 0 16px rgba(99,202,255,.12)
+}
+.d-name{font-family:var(--font);font-weight:900;font-size:1.2rem;color:var(--text)}
+.d-url{font-family:var(--mono);font-size:.62rem;color:var(--muted);margin-top:2px}
+.d-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:13px}
+.d-row{
+  display:flex;flex-direction:column;gap:3px;
+  padding:12px 12px;border-radius:10px;
+  background:var(--bg3);border:1px solid var(--border);
+  margin-bottom:9px;position:relative
+}
+.d-row-lbl{font-family:var(--font);font-weight:700;font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.d-row-val{font-family:var(--mono);font-size:.82rem;color:var(--text);word-break:break-all;padding-right:30px}
+.d-row-val.blurred{filter:blur(5px);transition:filter .2s;cursor:pointer}
+.d-row-val.blurred:active{filter:blur(0)}
+@media(hover:hover){.d-row-val.blurred:hover{filter:blur(0)}}
+.d-copy{
+  position:absolute;right:9px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:var(--muted);cursor:pointer;font-size:.82rem;padding:5px;
+  border-radius:6px;transition:color .15s,background .15s
+}
+.d-copy:hover{color:var(--blue);background:rgba(99,202,255,.1)}
+.d-copy.ok{color:var(--green)}
+.d-note-box{background:rgba(255,200,71,.06);border:1px solid rgba(255,200,71,.2);border-radius:10px;padding:12px;margin-bottom:9px}
+.d-note-lbl{font-family:var(--font);font-weight:700;font-size:.62rem;color:rgba(255,200,71,.6);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.d-note-txt{font-size:.82rem;color:rgba(255,200,71,.85);line-height:1.65;font-style:italic}
+.d-acts{display:flex;gap:9px;margin-top:16px}
+.btn-edit{
+  flex:1;padding:11px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:10px;
+  font-family:var(--font);font-weight:700;font-size:.85rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:6px;transition:border-color .15s,color .15s
+}
+.btn-edit:hover{border-color:var(--blue);color:var(--blue)}
+.btn-del{
+  flex:1;padding:11px;background:rgba(255,85,119,.1);border:1px solid rgba(255,85,119,.25);color:var(--red);border-radius:10px;
+  font-family:var(--font);font-weight:700;font-size:.85rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s
+}
+.btn-del:hover{background:rgba(255,85,119,.2)}
+
+/* ─── TOAST ─── */
+.toast-stack{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:7px;align-items:center;pointer-events:none}
+.toast-msg{padding:8px 16px;border-radius:30px;font-family:var(--font);font-weight:700;font-size:.78rem;background:var(--bg2);border:1px solid var(--border);color:var(--text);box-shadow:0 4px 20px rgba(0,0,0,.4);display:flex;align-items:center;gap:7px;animation:tIn .25s ease,tOut .3s ease 1.5s forwards;white-space:nowrap}
+.toast-msg.ok{border-color:rgba(77,255,176,.3);color:var(--green)}
+.toast-msg.er{border-color:rgba(255,85,119,.3);color:var(--red)}
+@keyframes tIn {from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes tOut{to{opacity:0;transform:translateY(-8px)}}
+.vcard.dying{animation:cardDie .3s ease forwards!important}
+@keyframes cardDie{to{opacity:0;transform:scale(.88)}}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+<div class="blob blob1"></div>
+<div class="blob blob2"></div>
+<div class="blob blob3"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-ico"><i class="bi bi-shield-lock-fill"></i></div>
+    Meko Master
+  </div>
+  <div class="hdr-right">
+    <div class="vault-badge" id="vBadge">0 Saved</div>
+    <button class="btn-add-hdr" onclick="openAdd()">
+      <i class="bi bi-plus-lg"></i> Add
+    </button>
+  </div>
+</header>
+
+<!-- STATS -->
+<div class="stats-row">
+  <div class="stat-item">
+    <div class="stat-num" id="sAll">0</div>
+    <div class="stat-lbl">Total</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" id="sEmail" style="color:var(--blue)">0</div>
+    <div class="stat-lbl">Email</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" id="sMob" style="color:var(--gold)">0</div>
+    <div class="stat-lbl">Mobile</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" id="sGmail" style="color:var(--red)">0</div>
+    <div class="stat-lbl">Gmail</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num" id="sApple" style="color:var(--purple)">0</div>
+    <div class="stat-lbl">Apple</div>
+  </div>
+</div>
+
+<!-- SEARCH + FILTER -->
+<div class="top-controls">
+  <div class="search-box">
+    <i class="bi bi-search"></i>
+    <input class="search-inp" id="searchInp" type="search" placeholder="Search websites, apps…" autocomplete="off"/>
+  </div>
+  <div class="filter-row" id="filterRow">
+    <div class="ftab active" data-f="all">All</div>
+    <div class="ftab" data-f="email"><i class="bi bi-envelope"></i> Email</div>
+    <div class="ftab" data-f="mobile"><i class="bi bi-phone"></i> Mobile</div>
+    <div class="ftab" data-f="gmail"><i class="bi bi-google"></i> Gmail</div>
+    <div class="ftab" data-f="apple"><i class="bi bi-apple"></i> Apple</div>
+  </div>
+</div>
+
+<!-- VAULT GRID -->
+<div class="vault-grid" id="vaultGrid"></div>
+
+<!-- ADD / EDIT SHEET -->
+<div class="overlay" id="addOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="closeOverlay('addOverlay')"><i class="bi bi-x"></i></button>
+    <div class="sheet-title"><i class="bi bi-plus-circle-fill"></i><span id="formTitle">Add Entry</span></div>
+
+    <div class="fgrp">
+      <label class="flbl">Website / App Name *</label>
+      <input class="finp" id="fName" placeholder="e.g. Instagram, Netflix, YouTube…" autocomplete="off"/>
+    </div>
+    <div class="fgrp">
+      <label class="flbl">URL (optional)</label>
+      <input class="finp" id="fUrl" placeholder="https://example.com" type="url" autocomplete="off"/>
+    </div>
+    <div class="fgrp">
+      <label class="flbl">Username / ID / Email</label>
+      <input class="finp" id="fUser" placeholder="username ya email" autocomplete="off"/>
+    </div>
+    <div class="fgrp">
+      <label class="flbl">Password</label>
+      <div class="pass-row">
+        <input class="finp" id="fPass" type="password" placeholder="••••••••" autocomplete="off"/>
+        <button class="eye-btn" type="button" onclick="toggleEye('fPass',this)"><i class="bi bi-eye"></i></button>
+      </div>
+    </div>
+    <div class="fgrp">
+      <label class="flbl">Login Type (ek ya zyada select karo)</label>
+      <div class="lt-grid">
+        <div class="lt-btn" id="lt-email"  onclick="toggleLT('email')"><i class="bi bi-envelope"></i> Email</div>
+        <div class="lt-btn" id="lt-mobile" onclick="toggleLT('mobile')"><i class="bi bi-phone"></i> Mobile</div>
+        <div class="lt-btn" id="lt-gmail"  onclick="toggleLT('gmail')"><i class="bi bi-google"></i> Gmail</div>
+        <div class="lt-btn" id="lt-apple"  onclick="toggleLT('apple')"><i class="bi bi-apple"></i> Apple ID</div>
+      </div>
+    </div>
+    <div class="fgrp">
+      <label class="flbl"><i class="bi bi-journal-text"></i> Personal Note</label>
+      <textarea class="ftarea" id="fNote" rows="3" placeholder="Kyun sign up kiya? Kuch khaas info is account ke baare mein…"></textarea>
+    </div>
+    <div class="form-acts">
+      <button class="btn-cancel" onclick="closeOverlay('addOverlay')">Cancel</button>
+      <button class="btn-save" onclick="saveEntry()"><i class="bi bi-check2-circle"></i> Vault Mein Save Karo</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL SHEET -->
+<div class="overlay" id="detailOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <button class="sheet-close" onclick="closeOverlay('detailOverlay')"><i class="bi bi-x"></i></button>
+    <div class="d-head">
+      <div class="d-av" id="dAv"></div>
+      <div>
+        <div class="d-name" id="dName"></div>
+        <div class="d-url" id="dUrl"></div>
+      </div>
+    </div>
+    <div class="d-badges" id="dBadges"></div>
+    <div class="d-row">
+      <span class="d-row-lbl">Username / ID</span>
+      <span class="d-row-val" id="dUser"></span>
+      <button class="d-copy" onclick="doCopy('dUser',this)"><i class="bi bi-copy"></i></button>
+    </div>
+    <div class="d-row">
+      <span class="d-row-lbl">Password &nbsp;<span style="font-size:.58rem;color:var(--muted);text-transform:none;letter-spacing:0">(tap/hover to reveal)</span></span>
+      <span class="d-row-val blurred" id="dPass"></span>
+      <button class="d-copy" onclick="doCopy('dPass',this)"><i class="bi bi-copy"></i></button>
+    </div>
+    <div class="d-note-box" id="dNoteBox">
+      <div class="d-note-lbl"><i class="bi bi-journal-text"></i> Tera Note</div>
+      <div class="d-note-txt" id="dNoteTxt"></div>
+    </div>
+    <div class="d-acts">
+      <button class="btn-edit" onclick="editEntry()"><i class="bi bi-pencil"></i> Edit</button>
+      <button class="btn-del"  onclick="deleteFromDetail()"><i class="bi bi-trash"></i> Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let vault = JSON.parse(localStorage.getItem('meko_v3')||'[]');
+let editId=null,viewId=null,filter='all',selLTs=new Set();
+
+function save(){localStorage.setItem('meko_v3',JSON.stringify(vault))}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+const LT={
+  email: {cls:'bl-email', icon:'bi-envelope',label:'Email'},
+  mobile:{cls:'bl-mobile',icon:'bi-phone',   label:'Mobile'},
+  gmail: {cls:'bl-gmail', icon:'bi-google',  label:'Gmail'},
+  apple: {cls:'bl-apple', icon:'bi-apple',   label:'Apple ID'},
+};
+function badgeHTML(lt){
+  const c=LT[lt];if(!c)return'';
+  return`<span class="badge-lt ${c.cls}"><i class="bi ${c.icon}"></i>${c.label}</span>`;
+}
+
+function render(){
+  const q=(document.getElementById('searchInp').value||'').toLowerCase();
+  const items=vault.filter(e=>{
+    const mq=!q||e.name.toLowerCase().includes(q)||(e.url||'').toLowerCase().includes(q);
+    const mf=filter==='all'||(e.lt||[]).includes(filter);
+    return mq&&mf;
+  });
+  document.getElementById('sAll').textContent  =vault.length;
+  document.getElementById('sEmail').textContent =vault.filter(e=>(e.lt||[]).includes('email')).length;
+  document.getElementById('sMob').textContent   =vault.filter(e=>(e.lt||[]).includes('mobile')).length;
+  document.getElementById('sGmail').textContent =vault.filter(e=>(e.lt||[]).includes('gmail')).length;
+  document.getElementById('sApple').textContent =vault.filter(e=>(e.lt||[]).includes('apple')).length;
+  document.getElementById('vBadge').textContent =vault.length+' Saved';
+  const grid=document.getElementById('vaultGrid');
+  if(!items.length){
+    grid.innerHTML=`<div class="empty-state">
+      <div class="empty-ico"><i class="bi bi-shield-lock"></i></div>
+      <h3>${q||filter!=='all'?'Kuch nahi mila':'Vault Khali Hai'}</h3>
+      <p>${q||filter!=='all'?'Dusra search ya filter try karo.':'Pehli entry add karo, teri credentials safe rahenge.'}</p>
+    </div>`;return;
+  }
+  grid.innerHTML=items.map((e,i)=>{
+    const badges=(e.lt||[]).map(badgeHTML).join('');
+    return`<div class="vcard" style="animation-delay:${i*.05}s" onclick="openDetail('${e.id}')">
+      <div class="vcard-top">
+        <div class="vcard-left">
+          <div class="vcard-av">${(e.name||'?')[0].toUpperCase()}</div>
+          <div class="vcard-info">
+            <div class="vcard-name">${esc(e.name)}</div>
+            <div class="vcard-url">${esc(e.url||'No URL')}</div>
+          </div>
+        </div>
+        <button class="vcard-del" onclick="event.stopPropagation();delCard('${e.id}',this)"><i class="bi bi-trash"></i></button>
+      </div>
+      <div class="vcard-badges">${badges||'<span style="color:var(--muted);font-size:.68rem">No login type</span>'}</div>
+      <div class="vcard-note"><i class="bi bi-journal-text" style="margin-right:4px;opacity:.45"></i>${e.note?esc(e.note):'<em>No note added</em>'}</div>
+    </div>`;
+  }).join('');
+}
+
+function openAdd(){
+  editId=null;selLTs=new Set();
+  document.getElementById('formTitle').textContent='Add Entry';
+  ['fName','fUrl','fUser','fPass','fNote'].forEach(id=>document.getElementById(id).value='');
+  syncLT();openOverlay('addOverlay');
+}
+function toggleLT(lt){selLTs.has(lt)?selLTs.delete(lt):selLTs.add(lt);syncLT()}
+function syncLT(){
+  ['email','mobile','gmail','apple'].forEach(lt=>{
+    const el=document.getElementById('lt-'+lt);
+    el.className='lt-btn'+(selLTs.has(lt)?' on-'+lt:'');
+  });
+}
+function saveEntry(){
+  const name=document.getElementById('fName').value.trim();
+  if(!name){toast('App/Website naam likhna zaroori hai!','er');return}
+  const entry={
+    id:editId||uid(),name,
+    url:document.getElementById('fUrl').value.trim(),
+    user:document.getElementById('fUser').value.trim(),
+    pass:document.getElementById('fPass').value,
+    lt:[...selLTs],
+    note:document.getElementById('fNote').value.trim(),
+    ts:editId?(vault.find(e=>e.id===editId)||{}).ts:Date.now(),
+  };
+  if(editId){const i=vault.findIndex(e=>e.id===editId);if(i>-1)vault[i]=entry;toast('Entry update ho gaya ✓','ok');}
+  else{vault.unshift(entry);toast('Vault mein save ho gaya ✓','ok');}
+  save();closeOverlay('addOverlay');render();
+  if(editId)setTimeout(()=>openDetail(entry.id),280);
+}
+function openDetail(id){
+  const e=vault.find(x=>x.id===id);if(!e)return;viewId=id;
+  document.getElementById('dAv').textContent=(e.name||'?')[0].toUpperCase();
+  document.getElementById('dName').textContent=e.name;
+  document.getElementById('dUrl').textContent=e.url||'No URL';
+  document.getElementById('dUser').textContent=e.user||'—';
+  document.getElementById('dPass').textContent=e.pass||'—';
+  document.getElementById('dNoteTxt').textContent=e.note||'';
+  document.getElementById('dNoteBox').style.display=e.note?'':'none';
+  document.getElementById('dBadges').innerHTML=(e.lt||[]).map(badgeHTML).join('')||'<span style="color:var(--muted);font-size:.72rem">No login type selected</span>';
+  document.getElementById('dPass').classList.add('blurred');
+  openOverlay('detailOverlay');
+}
+function editEntry(){
+  const e=vault.find(x=>x.id===viewId);if(!e)return;
+  closeOverlay('detailOverlay');
+  setTimeout(()=>{
+    editId=e.id;
+    document.getElementById('formTitle').textContent='Edit Entry';
+    document.getElementById('fName').value=e.name;
+    document.getElementById('fUrl').value=e.url||'';
+    document.getElementById('fUser').value=e.user||'';
+    document.getElementById('fPass').value=e.pass||'';
+    document.getElementById('fNote').value=e.note||'';
+    selLTs=new Set(e.lt||[]);syncLT();
+    openOverlay('addOverlay');
+  },280);
+}
+function deleteFromDetail(){vault=vault.filter(e=>e.id!==viewId);save();render();closeOverlay('detailOverlay');toast('Entry delete ho gaya','ok')}
+function delCard(id,btn){
+  btn.closest('.vcard').classList.add('dying');
+  setTimeout(()=>{vault=vault.filter(e=>e.id!==id);save();render();},300);
+  toast('Delete ho gaya','ok');
+}
+function openOverlay(id){document.getElementById(id).classList.add('open')}
+function closeOverlay(id){document.getElementById(id).classList.remove('open')}
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)closeOverlay(o.id)}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeOverlay('addOverlay');closeOverlay('detailOverlay')}});
+function toggleEye(id,btn){
+  const inp=document.getElementById(id);const ico=btn.querySelector('i');
+  inp.type=inp.type==='password'?'text':'password';
+  ico.className=inp.type==='password'?'bi bi-eye':'bi bi-eye-slash';
+}
+function doCopy(elId,btn){
+  const txt=document.getElementById(elId).textContent;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const ico=btn.querySelector('i');ico.className='bi bi-check2';btn.classList.add('ok');
+    setTimeout(()=>{ico.className='bi bi-copy';btn.classList.remove('ok');},1400);
+    toast('Copy ho gaya!','ok');
+  });
+}
+function toast(msg,type='ok'){
+  const s=document.getElementById('toastStack');const t=document.createElement('div');
+  t.className=`toast-msg ${type}`;
+  t.innerHTML=`<i class="bi bi-${type==='ok'?'check-circle':'exclamation-circle'}"></i> ${msg}`;
+  s.appendChild(t);setTimeout(()=>t.remove(),2100);
+}
+document.getElementById('filterRow').addEventListener('click',e=>{
+  const tab=e.target.closest('.ftab');if(!tab)return;
+  document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');filter=tab.dataset.f;render();
+});
+document.getElementById('searchInp').addEventListener('input',render);
+render();
+</script>
+</body>
+</html>
