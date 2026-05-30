@@ -495,6 +495,14 @@
             transition: 0.2s;
         }
         .ims-clear-btn:hover { background: rgba(244, 114, 182, 0.2); transform: translateY(-1px); }
+
+        /* IMS table card — color tint when a status filter is active */
+        .ims-table-card { transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease; }
+        .ims-table-card.tint-purple { background: rgba(139, 92, 246, 0.10); border-color: rgba(139, 92, 246, 0.35); box-shadow: 0 8px 32px rgba(139, 92, 246, 0.12); }
+        .ims-table-card.tint-green  { background: rgba(16, 185, 129, 0.10); border-color: rgba(16, 185, 129, 0.35); box-shadow: 0 8px 32px rgba(16, 185, 129, 0.12); }
+        .ims-table-card.tint-yellow { background: rgba(251, 191, 36, 0.10); border-color: rgba(251, 191, 36, 0.35); box-shadow: 0 8px 32px rgba(251, 191, 36, 0.12); }
+        .ims-table-card.tint-red    { background: rgba(239, 68, 68, 0.10);  border-color: rgba(239, 68, 68, 0.35);  box-shadow: 0 8px 32px rgba(239, 68, 68, 0.12); }
+        .ims-table-card.tint-black  { background: rgba(71, 85, 105, 0.18);  border-color: rgba(71, 85, 105, 0.5);   box-shadow: 0 8px 32px rgba(71, 85, 105, 0.15); }
         .ims-status-card .label { 
             font-size: 11px; font-weight: 800; color: var(--text-muted); 
             text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;
@@ -878,7 +886,7 @@
                     </div>
 
                     <!-- Full Top 50 Table -->
-                    <div class="glass-card">
+                    <div class="glass-card ims-table-card" id="ims-table-card">
                         <div class="chart-title">
                             <span>Top 50 Capital-Heavy Items <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); background: rgba(167, 139, 250, 0.1); padding: 4px 9px; border-radius: 6px; margin-left: 10px;">Sorted by Landing Cost</span></span>
                         </div>
@@ -1343,6 +1351,11 @@
             var labels = { 0: 'Stock-Out items', 1: 'Critical items', 2: 'Watch items', 3: 'Healthy items', 4: 'Overstock items' };
             document.getElementById('ims-filter-label').innerText = labels[statusOrder] || 'All';
             document.getElementById('ims-filter-banner').style.display = 'flex';
+            // Tint the table card with the matching color
+            var tintMap = { 0: 'tint-black', 1: 'tint-red', 2: 'tint-yellow', 3: 'tint-green', 4: 'tint-purple' };
+            var card = document.getElementById('ims-table-card');
+            card.classList.remove('tint-black','tint-red','tint-yellow','tint-green','tint-purple');
+            card.classList.add(tintMap[statusOrder]);
             renderImsTable();
         }
 
@@ -1350,6 +1363,8 @@
             imsStatusFilter = null;
             document.querySelectorAll('.ims-status-card').forEach(function(c) { c.classList.remove('active-filter'); });
             document.getElementById('ims-filter-banner').style.display = 'none';
+            var card = document.getElementById('ims-table-card');
+            card.classList.remove('tint-black','tint-red','tint-yellow','tint-green','tint-purple');
             renderImsTable();
         }
 
