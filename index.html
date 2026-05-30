@@ -436,6 +436,65 @@
             background: var(--accent, var(--aurora-green));
         }
         .ims-status-card:hover { transform: translateY(-3px); border-color: var(--glass-border-hover); }
+        .ims-status-card.active-filter {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent), 0 8px 28px rgba(0,0,0,0.4);
+            transform: translateY(-3px);
+        }
+        .ims-status-card.active-filter::after { width: 6px; }
+
+        /* IMS Password Lock Screen */
+        .ims-lock-screen {
+            display: flex; justify-content: center; align-items: center;
+            min-height: 500px; padding: 40px 20px;
+        }
+        .ims-lock-box {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            padding: 44px 38px; width: 100%; max-width: 420px; text-align: center;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.35);
+            position: relative; overflow: hidden;
+        }
+        .ims-lock-box::before {
+            content: ''; position: absolute; inset: 0; border-radius: 20px; padding: 1px;
+            background: linear-gradient(135deg, rgba(167, 139, 250, 0.25), transparent 50%, rgba(16, 185, 129, 0.2));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none;
+        }
+        .ims-lock-icon {
+            width: 70px; height: 70px; border-radius: 18px; margin: 0 auto 22px;
+            background: linear-gradient(135deg, var(--aurora-green), var(--aurora-violet));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; color: var(--bg-base);
+            box-shadow: 0 8px 28px rgba(16, 185, 129, 0.35);
+        }
+        .ims-lock-box h3 {
+            font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 10px;
+        }
+        .ims-lock-box p {
+            font-size: 13.5px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px;
+        }
+        .ims-lock-error {
+            color: var(--aurora-pink); font-size: 13px; font-weight: 700; margin-top: 10px; min-height: 18px;
+        }
+
+        /* IMS Filter Active Banner */
+        .ims-filter-banner {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(167, 139, 250, 0.08);
+            border: 1px solid rgba(167, 139, 250, 0.2);
+            border-radius: 12px; padding: 12px 18px; margin-bottom: 20px;
+            font-size: 13.5px; font-weight: 600; color: var(--text-soft);
+        }
+        .ims-filter-banner b { color: #fff; }
+        .ims-clear-btn {
+            background: rgba(244, 114, 182, 0.12); color: var(--aurora-pink);
+            border: 1px solid rgba(244, 114, 182, 0.25); border-radius: 8px;
+            padding: 6px 14px; font-size: 12.5px; font-weight: 700; cursor: pointer;
+            transition: 0.2s;
+        }
+        .ims-clear-btn:hover { background: rgba(244, 114, 182, 0.2); transform: translateY(-1px); }
         .ims-status-card .label { 
             font-size: 11px; font-weight: 800; color: var(--text-muted); 
             text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;
@@ -768,33 +827,52 @@
                      IMS VIEW — Inventory Management System
                      ============================================================ -->
                 <div id="view-inventory" class="view-section">
-                    
-                    <!-- 5 Status Cards Row -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-6 col-md-2"><div class="ims-status-card" style="--accent: #8B5CF6;"><div class="label"><span class="dot"></span> Overstock</div><div class="count" id="ims-count-purple">0</div><div class="sub">≥ 100% of max</div></div></div>
-                        <div class="col-6 col-md-2"><div class="ims-status-card" style="--accent: #10B981;"><div class="label"><span class="dot"></span> Healthy</div><div class="count" id="ims-count-green">0</div><div class="sub">66–99%</div></div></div>
-                        <div class="col-6 col-md-2"><div class="ims-status-card" style="--accent: #FBBF24;"><div class="label"><span class="dot"></span> Watch</div><div class="count" id="ims-count-yellow">0</div><div class="sub">33–65%</div></div></div>
-                        <div class="col-6 col-md-2"><div class="ims-status-card" style="--accent: #EF4444;"><div class="label"><span class="dot"></span> Critical</div><div class="count" id="ims-count-red">0</div><div class="sub">10–32%</div></div></div>
-                        <div class="col-12 col-md-4"><div class="ims-status-card" style="--accent: #475569;"><div class="label"><span class="dot"></span> Stock-Out · Capital Locked</div><div class="count" id="ims-count-black">0</div><div class="sub">0% · Total Locked: <span id="ims-capital-locked" style="color: var(--aurora-emerald); font-weight: 800;">₹0</span></div></div></div>
+
+                    <!-- ===== PASSWORD GATE (shows when locked) ===== -->
+                    <div id="ims-lock-screen" class="ims-lock-screen">
+                        <div class="ims-lock-box">
+                            <div class="ims-lock-icon"><i class="fa-solid fa-lock"></i></div>
+                            <h3>Inventory Locked</h3>
+                            <p>This module holds sensitive stock & capital data. Enter the access password to continue.</p>
+                            <input type="password" id="ims-password" class="admin-input" placeholder="Enter access password" onkeypress="if(event.key==='Enter') unlockIMS()">
+                            <button class="admin-btn" onclick="unlockIMS()"><i class="fa-solid fa-unlock me-2"></i>Unlock Inventory</button>
+                            <div id="ims-lock-error" class="ims-lock-error"></div>
+                        </div>
                     </div>
 
-                    <!-- Reorder Priority + Stock Health Donut Row -->
+                    <!-- ===== ACTUAL IMS CONTENT (hidden until unlocked) ===== -->
+                    <div id="ims-content" style="display:none;">
+
+                    <!-- 5 Clickable Status Filter Cards -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-6 col-md-2"><div class="ims-status-card" data-status="4" style="--accent: #8B5CF6;" onclick="filterImsByStatus(4, this)"><div class="label"><span class="dot"></span> Overstock</div><div class="count" id="ims-count-purple">0</div><div class="sub">≥ 100% · click to filter</div></div></div>
+                        <div class="col-6 col-md-2"><div class="ims-status-card" data-status="3" style="--accent: #10B981;" onclick="filterImsByStatus(3, this)"><div class="label"><span class="dot"></span> Healthy</div><div class="count" id="ims-count-green">0</div><div class="sub">66–99% · click to filter</div></div></div>
+                        <div class="col-6 col-md-2"><div class="ims-status-card" data-status="2" style="--accent: #FBBF24;" onclick="filterImsByStatus(2, this)"><div class="label"><span class="dot"></span> Watch</div><div class="count" id="ims-count-yellow">0</div><div class="sub">33–65% · click to filter</div></div></div>
+                        <div class="col-6 col-md-2"><div class="ims-status-card" data-status="1" style="--accent: #EF4444;" onclick="filterImsByStatus(1, this)"><div class="label"><span class="dot"></span> Critical</div><div class="count" id="ims-count-red">0</div><div class="sub">10–32% · click to filter</div></div></div>
+                        <div class="col-12 col-md-4"><div class="ims-status-card" data-status="0" style="--accent: #475569;" onclick="filterImsByStatus(0, this)"><div class="label"><span class="dot"></span> Stock-Out · Capital Locked</div><div class="count" id="ims-count-black">0</div><div class="sub">0% · Total Locked: <span id="ims-capital-locked" style="color: var(--aurora-emerald); font-weight: 800;">₹0</span></div></div></div>
+                    </div>
+
+                    <!-- Filter active banner -->
+                    <div id="ims-filter-banner" class="ims-filter-banner" style="display:none;">
+                        <span><i class="fa-solid fa-filter me-2"></i>Showing: <b id="ims-filter-label">All</b></span>
+                        <button onclick="clearImsFilter()" class="ims-clear-btn"><i class="fa-solid fa-xmark me-1"></i>Clear filter · show all</button>
+                    </div>
+
+                    <!-- Reorder Section + Donut Row -->
                     <div class="row g-4 mb-4">
                         <div class="col-12 col-xl-7">
                             <div class="glass-card">
                                 <div class="chart-title">
-                                    <span><i class="fa-solid fa-triangle-exclamation me-2" style="color: var(--aurora-amber);"></i> Reorder Priority — Critical Items</span>
+                                    <span><i class="fa-solid fa-cart-arrow-down me-2" style="color: var(--aurora-amber);"></i> Items To Re-Order Now</span>
                                     <span id="ims-data-source" class="data-source-badge mock"><i class="fa-solid fa-flask"></i> Mock Data</span>
                                 </div>
-                                <ul class="reorder-priority-list" id="ims-reorder-list">
-                                    <!-- Reorder items injected -->
-                                </ul>
+                                <ul class="reorder-priority-list" id="ims-reorder-list"></ul>
                             </div>
                         </div>
                         <div class="col-12 col-xl-5">
                             <div class="glass-card">
                                 <div class="chart-title">Stock Health Distribution</div>
-                                <div id="echart-ims-donut" class="echart-container" style="min-height: 350px;"></div>
+                                <div id="echart-ims-donut" class="echart-container" style="min-height: 320px;"></div>
                             </div>
                         </div>
                     </div>
@@ -814,6 +892,8 @@
                             </table>
                         </div>
                     </div>
+
+                    </div><!-- /ims-content -->
                 </div>
 
                 <div id="view-customers" class="view-section">
@@ -873,6 +953,9 @@
         var autoRefreshTimer = null;
         var lastSyncTimestamp = 0;
         var lastSalesCount = 0;
+        var imsUnlocked = false;
+        var imsStatusFilter = null;   // null = all, else 0-4
+        var imsTop50Cache = [];        // cache last computed top50 for filtering
         var clockTickerTimer = null;
 
         var AURORA = {
@@ -1126,8 +1209,13 @@
             } else if (targetId === 'view-purchase') {
                 subtitle.innerText = 'Purchase module under construction';
             } else if (targetId === 'view-inventory') {
-                imsCtl.style.display = 'flex';
                 subtitle.innerText = 'Smart stock management · Max-level engine · Reorder priority';
+                // Show IMS controls only if unlocked
+                if (imsUnlocked) {
+                    imsCtl.style.display = 'flex';
+                } else {
+                    imsCtl.style.display = 'none';
+                }
             } else {
                 rangeP.style.display = 'flex';
                 subtitle.innerText = 'Real-time Ikxari metrics — auto-syncs every 60 seconds';
@@ -1140,8 +1228,7 @@
 
             // ===== INVENTORY VIEW — separate logic =====
             if (globalCurrentActiveView === 'view-inventory') {
-                renderInventory();
-                resetGlobalSearch();
+                if (imsUnlocked) { renderInventory(); resetGlobalSearch(); }
                 return;
             }
 
@@ -1225,6 +1312,75 @@
         // ============================================================
         // INVENTORY MANAGEMENT SYSTEM (IMS) ENGINE
         // ============================================================
+        function unlockIMS() {
+            var pass = document.getElementById('ims-password').value;
+            var errEl = document.getElementById('ims-lock-error');
+            if (pass === "ikxariadmin") {
+                imsUnlocked = true;
+                document.getElementById('ims-lock-screen').style.display = 'none';
+                document.getElementById('ims-content').style.display = 'block';
+                document.getElementById('ims-controls').style.display = 'flex';
+                errEl.innerText = "";
+                document.getElementById('ims-password').value = "";
+                renderInventory();
+            } else {
+                errEl.innerText = "Wrong password. Try again.";
+                document.getElementById('ims-password').value = "";
+            }
+        }
+
+        function filterImsByStatus(statusOrder, cardEl) {
+            // Toggle: if same filter clicked again, clear it
+            if (imsStatusFilter === statusOrder) {
+                clearImsFilter();
+                return;
+            }
+            imsStatusFilter = statusOrder;
+            // Highlight active card
+            document.querySelectorAll('.ims-status-card').forEach(function(c) { c.classList.remove('active-filter'); });
+            cardEl.classList.add('active-filter');
+            // Show banner
+            var labels = { 0: 'Stock-Out items', 1: 'Critical items', 2: 'Watch items', 3: 'Healthy items', 4: 'Overstock items' };
+            document.getElementById('ims-filter-label').innerText = labels[statusOrder] || 'All';
+            document.getElementById('ims-filter-banner').style.display = 'flex';
+            renderImsTable();
+        }
+
+        function clearImsFilter() {
+            imsStatusFilter = null;
+            document.querySelectorAll('.ims-status-card').forEach(function(c) { c.classList.remove('active-filter'); });
+            document.getElementById('ims-filter-banner').style.display = 'none';
+            renderImsTable();
+        }
+
+        function renderImsTable() {
+            var tbody = document.querySelector('#table-ims tbody');
+            var rHtml = [];
+            var displayList = imsTop50Cache;
+            if (imsStatusFilter !== null) {
+                displayList = imsTop50Cache.filter(function(it) { return it.statusOrder === imsStatusFilter; });
+            }
+            if (displayList.length === 0) {
+                rHtml.push("<tr><td colspan='9' style='text-align:center; padding:40px; color:var(--text-muted);'>No items in this category.</td></tr>");
+            } else {
+                for (var t = 0; t < displayList.length; t++) {
+                    var it2 = displayList[t];
+                    rHtml.push("<tr>" +
+                        "<td style='font-weight:800; color:var(--text-muted);'>" + (it2.rank) + "</td>" +
+                        "<td style='color:#fff; font-weight:600;'>" + it2.name + "</td>" +
+                        "<td style='color:" + AURORA.amber + "; font-weight:700;'>" + formatFullCurrencyINR(it2.landingCost) + "</td>" +
+                        "<td>" + it2.avgDaily.toFixed(2) + " U/day</td>" +
+                        "<td style='font-weight:700; color:#fff;'>" + it2.currentStock + "</td>" +
+                        "<td style='color:var(--text-muted);'>" + it2.maxLevel + "</td>" +
+                        "<td style='font-weight:700;'>" + Math.round(it2.stockPct) + "%</td>" +
+                        "<td><span class='status-pill-ims " + it2.statusClass + "'><span class='dot'></span>" + it2.status + "</span></td>" +
+                        "<td style='color:" + (it2.reorderQty > 0 ? AURORA.emerald : 'var(--text-muted)') + "; font-weight:700;'>" + (it2.reorderQty > 0 ? '+' + it2.reorderQty : '—') + "</td>" +
+                    "</tr>");
+                }
+            }
+            tbody.innerHTML = rHtml.join('');
+        }
+
         function renderInventory() {
             // Read controls
             var periodDays = parseInt(document.getElementById('ims-period').value) || 30;
@@ -1317,6 +1473,9 @@
             // Sort by landing cost descending, take top 50
             itemArr.sort(function(a, b) { return b.landingCost - a.landingCost; });
             var top50 = itemArr.slice(0, 50);
+            // Assign rank + cache for filtering
+            for (var rk = 0; rk < top50.length; rk++) { top50[rk].rank = rk + 1; }
+            imsTop50Cache = top50;
 
             // Step 3: Status counts (across top 50 only)
             var counts = { purple: 0, green: 0, yellow: 0, red: 0, black: 0 };
@@ -1379,44 +1538,29 @@
             }
             document.getElementById('ims-reorder-list').innerHTML = reorderHtml;
 
-            // Step 5: Donut chart
+            // Step 5: Donut chart — Expense-rose (nightingale) style, responsive
             initEChart('echart-ims-donut', {
                 tooltip: auroraTooltip({ trigger: 'item', formatter: function(p) { return '<b>' + p.name + '</b><br/>' + p.marker + ' ' + p.value + ' items (' + p.percent + '%)'; } }),
-                legend: { orient: 'vertical', right: 16, top: 'middle', textStyle: { color: AURORA.muted, fontFamily: 'Jost', fontWeight: 600, fontSize: 12 }, itemWidth: 12, itemHeight: 12, itemGap: 12 },
+                legend: { orient: 'vertical', right: 12, top: 'middle', textStyle: { color: AURORA.muted, fontFamily: 'Jost', fontWeight: 600, fontSize: 12 }, itemWidth: 12, itemHeight: 12, itemGap: 11 },
                 series: [{
-                    type: 'pie', radius: ['55%', '85%'], center: ['35%', '50%'],
-                    itemStyle: { borderRadius: 8, borderColor: 'rgba(2,6,23,0.6)', borderWidth: 3 },
+                    type: 'pie', radius: [22, '78%'], center: ['36%', '50%'], roseType: 'area',
+                    itemStyle: { borderRadius: 6, borderColor: 'rgba(2, 6, 23, 0.6)', borderWidth: 2 },
                     label: { show: false },
-                    emphasis: { itemStyle: { shadowBlur: 24 }, scale: true, scaleSize: 8 },
+                    labelLine: { show: false },
+                    emphasis: { itemStyle: { shadowBlur: 20 }, scale: true, scaleSize: 8 },
                     data: [
-                        { name: 'Stock-Out', value: counts.black, itemStyle: { color: AURORA.black, shadowBlur: 12, shadowColor: AURORA.black + '60' } },
-                        { name: 'Critical', value: counts.red, itemStyle: { color: AURORA.red, shadowBlur: 12, shadowColor: AURORA.red + '60' } },
-                        { name: 'Watch', value: counts.yellow, itemStyle: { color: AURORA.amber, shadowBlur: 12, shadowColor: AURORA.amber + '60' } },
-                        { name: 'Healthy', value: counts.green, itemStyle: { color: AURORA.emerald, shadowBlur: 12, shadowColor: AURORA.emerald + '60' } },
-                        { name: 'Overstock', value: counts.purple, itemStyle: { color: AURORA.purple, shadowBlur: 12, shadowColor: AURORA.purple + '60' } }
+                        { name: 'Stock-Out', value: counts.black, itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,1,[{offset:0,color:AURORA.black},{offset:1,color:AURORA.black+'70'}]), shadowBlur: 12, shadowColor: AURORA.black + '50' } },
+                        { name: 'Critical', value: counts.red, itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,1,[{offset:0,color:AURORA.red},{offset:1,color:AURORA.red+'70'}]), shadowBlur: 12, shadowColor: AURORA.red + '50' } },
+                        { name: 'Watch', value: counts.yellow, itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,1,[{offset:0,color:AURORA.amber},{offset:1,color:AURORA.amber+'70'}]), shadowBlur: 12, shadowColor: AURORA.amber + '50' } },
+                        { name: 'Healthy', value: counts.green, itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,1,[{offset:0,color:AURORA.emerald},{offset:1,color:AURORA.emerald+'70'}]), shadowBlur: 12, shadowColor: AURORA.emerald + '50' } },
+                        { name: 'Overstock', value: counts.purple, itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,1,[{offset:0,color:AURORA.purple},{offset:1,color:AURORA.purple+'70'}]), shadowBlur: 12, shadowColor: AURORA.purple + '50' } }
                     ]
                 }],
-                animation: true, animationDuration: 1200, animationEasing: 'cubicOut'
+                animation: true, animationDuration: 1400, animationEasing: 'cubicOut'
             });
 
-            // Step 6: Full table
-            var tbody = document.querySelector('#table-ims tbody');
-            var rHtml = [];
-            for (var t = 0; t < top50.length; t++) {
-                var it2 = top50[t];
-                rHtml.push("<tr>" +
-                    "<td style='font-weight:800; color:var(--text-muted);'>" + (t+1) + "</td>" +
-                    "<td style='color:#fff; font-weight:600;'>" + it2.name + "</td>" +
-                    "<td style='color:" + AURORA.amber + "; font-weight:700;'>" + formatFullCurrencyINR(it2.landingCost) + "</td>" +
-                    "<td>" + it2.avgDaily.toFixed(2) + " U/day</td>" +
-                    "<td style='font-weight:700; color:#fff;'>" + it2.currentStock + "</td>" +
-                    "<td style='color:var(--text-muted);'>" + it2.maxLevel + "</td>" +
-                    "<td style='font-weight:700;'>" + Math.round(it2.stockPct) + "%</td>" +
-                    "<td><span class='status-pill-ims " + it2.statusClass + "'><span class='dot'></span>" + it2.status + "</span></td>" +
-                    "<td style='color:" + (it2.reorderQty > 0 ? AURORA.emerald : 'var(--text-muted)') + "; font-weight:700;'>" + (it2.reorderQty > 0 ? '+' + it2.reorderQty : '—') + "</td>" +
-                "</tr>");
-            }
-            tbody.innerHTML = rHtml.join('');
+            // Step 6: Render table (respects active filter)
+            renderImsTable();
         }
 
         function renderOverview(kpis, trendMap, catMap) {
@@ -1441,14 +1585,14 @@
             initEChart('echart-trend', {
                 tooltip: auroraTooltip({ trigger: 'axis', formatter: function(p) { return '<div style="font-weight:700; margin-bottom:6px;">' + p[0].axisValue + '</div>' + p[0].marker + ' Net Sales: <b style="color:' + AURORA.emerald + '">' + formatFullCurrencyINR(p[0].value) + '</b><br/>' + p[1].marker + ' Gross Profit: <b style="color:' + AURORA.violet + '">' + formatFullCurrencyINR(p[1].value) + '</b>'; } }),
                 legend: { data: ['Net Sales', 'Gross Profit'], textStyle: { color: AURORA.muted, fontFamily: 'Jost', fontWeight: 600 }, bottom: 0, itemWidth: 14, itemHeight: 8, itemGap: 24 },
-                grid: { left: '3%', right: '4%', bottom: '12%', top: '5%', containLabel: true },
+                grid: { left: '3%', right: '4%', bottom: '12%', top: '8%', containLabel: true },
                 xAxis: { type: 'category', boundaryGap: false, data: dates, axisLine: { lineStyle: { color: AURORA.grid } }, axisTick: { show: false }, axisLabel: { color: AURORA.muted, fontFamily: 'Jost', fontSize: 11 } },
-                yAxis: { type: 'value', splitLine: { lineStyle: { color: AURORA.grid, type: 'dashed' } }, axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: AURORA.muted, fontFamily: 'Jost', fontSize: 11, formatter: function(v) { return formatShortCurrency(v); } } },
+                yAxis: { type: 'value', splitLine: { lineStyle: { color: AURORA.grid } }, axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: AURORA.muted, fontFamily: 'Jost', fontSize: 11, formatter: function(v) { return formatShortCurrency(v); } } },
                 series: [
-                    { name: 'Net Sales', type: 'line', smooth: true, symbol: 'circle', symbolSize: 8, showSymbol: false, lineStyle: { color: AURORA.emerald, width: 3, shadowBlur: 14, shadowColor: 'rgba(52, 211, 153, 0.55)', shadowOffsetY: 2 }, itemStyle: { color: AURORA.emerald, borderColor: '#fff', borderWidth: 2 }, emphasis: { focus: 'series', scale: 1.4 }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: 'rgba(52, 211, 153, 0.45)'}, {offset: 0.7, color: 'rgba(52, 211, 153, 0.08)'}, {offset: 1, color: 'rgba(52, 211, 153, 0)'}]) }, data: salesData },
-                    { name: 'Gross Profit', type: 'line', smooth: true, symbol: 'circle', symbolSize: 8, showSymbol: false, lineStyle: { color: AURORA.violet, width: 3, shadowBlur: 14, shadowColor: 'rgba(167, 139, 250, 0.55)', shadowOffsetY: 2 }, itemStyle: { color: AURORA.violet, borderColor: '#fff', borderWidth: 2 }, emphasis: { focus: 'series', scale: 1.4 }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: 'rgba(167, 139, 250, 0.4)'}, {offset: 0.7, color: 'rgba(167, 139, 250, 0.06)'}, {offset: 1, color: 'rgba(167, 139, 250, 0)'}]) }, data: profitData }
+                    { name: 'Net Sales', type: 'line', smooth: 0.4, symbol: 'none', lineStyle: { color: AURORA.emerald, width: 2.5 }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: 'rgba(52, 211, 153, 0.22)'}, {offset: 1, color: 'rgba(52, 211, 153, 0)'}]) }, data: salesData },
+                    { name: 'Gross Profit', type: 'line', smooth: 0.4, symbol: 'none', lineStyle: { color: AURORA.violet, width: 2.5 }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: 'rgba(167, 139, 250, 0.18)'}, {offset: 1, color: 'rgba(167, 139, 250, 0)'}]) }, data: profitData }
                 ],
-                animation: true, animationDuration: 1200, animationEasing: 'cubicOut'
+                animation: true, animationDuration: 900, animationEasing: 'cubicOut'
             });
             var catArr = sortMap(catMap, 6);
             var catNames = catArr.map(function(item) { return item.k; });
