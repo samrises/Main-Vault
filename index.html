@@ -316,7 +316,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
 <script>
 /* ===================== CONFIG ===================== */
-const API = "https://script.google.com/macros/s/AKfycbz-46TiHrIRJZ6jL6VcGeOUhd_VvzqMz4t0h-2-ql0ofKiVNkBI5UtZ1m49Yk9i0Sgy/exec";   // GAS /exec URL
+const API = "https://script.google.com/macros/s/AKfycbw69pY_8lchf2mQ45s19qk9Uu1yrLMA08N1Ca4rrUmUYZexkgotQppD6NXDdUy1GLlh/exec";   // GAS /exec URL
 const DEVICE = (navigator.userAgent||"Unknown")+" | "+(navigator.platform||"");
 
 /* ===================== CORE ===================== */
@@ -475,8 +475,10 @@ function openTab(id){
 function setContent(html){$('content').innerHTML='<div class="page show">'+html+'</div>';}
 
 /* ---------- date filter ---------- */
-let DATE_FROM='', DATE_TO='';
+let DATE_FROM='', DATE_TO='', FORCE_FRESH=false;
 function dp(){ return {from:DATE_FROM, to:DATE_TO}; }
+function dapi(action){ var f=FORCE_FRESH; FORCE_FRESH=false; return api({action:action,token:tGet(),from:DATE_FROM,to:DATE_TO,fresh:f}); }
+function refreshTab(){ FORCE_FRESH=true; openTab(CUR); }
 function dateBar(){
   return '<div class="datebar">'+
     '<span class="dl">From</span><input type="date" id="df" value="'+DATE_FROM+'">'+
@@ -525,14 +527,14 @@ function chart(elId,opt){ var el=$(elId); if(!el||typeof ApexCharts==='undefined
   if(el._c){try{el._c.destroy()}catch(e){}} el._c=new ApexCharts(el,opt); el._c.render(); }
 function statCard(label,n,sub){return '<div class="stat"><div class="n">'+n+'</div><div class="l">'+label+(sub?' · '+sub:'')+'</div><div class="bar"></div></div>';}
 function pagehead(title,sub,tab){return '<div class="pagehead"><div><h3>'+esc(title)+'</h3><div class="sub">'+esc(sub)+'</div></div>'+
-  '<button class="btn ghost sm" onclick="openTab(\''+tab+'\')">↻ Refresh</button></div>';}
+  '<button class="btn ghost sm" onclick="refreshTab()">↻ Refresh</button></div>';}
 function loadingBox(){return '<div class="soon"><div class="ic">⏳</div><h3>Loading…</h3><p>Fetching live data from your sheet.</p></div>';}
 function noData(msg){return '<div class="soon"><div class="ic">📭</div><h3>No data</h3><p>'+esc(msg||'Nothing to show yet.')+'</p></div>';}
 
 /* ---------- Overview (live) ---------- */
 function renderOverview(){
   setContent(pagehead('Executive Overview','Live snapshot from Master Sales & Expenses','overview')+dateBar()+'<div id="ov">'+loadingBox()+'</div>');
-  api({action:'getOverview',token:tGet(),from:DATE_FROM,to:DATE_TO}).then(d=>{
+  dapi('getOverview').then(d=>{
     if(!d.ok)return ($('ov').innerHTML=errBox(d));
     const k=d.kpis;
     $('ov').innerHTML=
@@ -577,7 +579,7 @@ function drawTrend(elId,trend){
 /* ---------- Sales Analytics (live) ---------- */
 function renderSales(){
   setContent(pagehead('Sales Analytics','Revenue, profit and performance — live','sales')+dateBar()+'<div id="sa">'+loadingBox()+'</div>');
-  api({action:'getSales',token:tGet(),from:DATE_FROM,to:DATE_TO}).then(d=>{
+  dapi('getSales').then(d=>{
     if(!d.ok)return ($('sa').innerHTML=errBox(d));
     const k=d.kpis;
     $('sa').innerHTML=
@@ -626,7 +628,7 @@ function tbl(cols,rows){ var h='<div class="tablewrap"><table><thead><tr>'+cols.
 /* ---------- Returns ---------- */
 function renderReturns(){
   setContent(pagehead('Returns','Sale returns — quantity based','returns')+dateBar()+'<div id="rt">'+loadingBox()+'</div>');
-  api({action:'getReturns',token:tGet(),from:DATE_FROM,to:DATE_TO}).then(d=>{
+  dapi('getReturns').then(d=>{
     if(!d.ok)return($('rt').innerHTML=errBox(d)); const k=d.kpis;
     $('rt').innerHTML='<div class="cards">'+
       statCard('Return Qty',Number(k.returnQty).toLocaleString('en-IN'))+
@@ -646,7 +648,7 @@ function renderReturns(){
 /* ---------- Purchase ---------- */
 function renderPurchase(){
   setContent(pagehead('Purchase','Purchase value, vendors & items — live','purchase')+dateBar()+'<div id="pu">'+loadingBox()+'</div>');
-  api({action:'getPurchase',token:tGet(),from:DATE_FROM,to:DATE_TO}).then(d=>{
+  dapi('getPurchase').then(d=>{
     if(!d.ok)return($('pu').innerHTML=errBox(d)); const k=d.kpis;
     $('pu').innerHTML='<div class="cards">'+
       statCard('Purchase Value',inrS(k.purchaseValue),'incl. tax')+
@@ -672,7 +674,7 @@ function renderPurchase(){
 /* ---------- Customer CRM ---------- */
 function renderCRM(){
   setContent(pagehead('Customer CRM','Customers, repeats & top spenders — live','crm')+dateBar()+'<div id="cr">'+loadingBox()+'</div>');
-  api({action:'getCRM',token:tGet(),from:DATE_FROM,to:DATE_TO}).then(d=>{
+  dapi('getCRM').then(d=>{
     if(!d.ok)return($('cr').innerHTML=errBox(d)); const k=d.kpis;
     $('cr').innerHTML='<div class="cards">'+
       statCard('Total Customers',Number(k.totalCustomers).toLocaleString('en-IN'))+
@@ -692,7 +694,7 @@ function renderCRM(){
 /* ---------- Vendor ---------- */
 function renderVendor(){
   setContent(pagehead('Vendor','Vendor ranking by purchase value — live','vendor')+dateBar()+'<div id="vn">'+loadingBox()+'</div>');
-  api({action:'getVendor',token:tGet(),from:DATE_FROM,to:DATE_TO}).then(d=>{
+  dapi('getVendor').then(d=>{
     if(!d.ok)return($('vn').innerHTML=errBox(d)); const k=d.kpis;
     $('vn').innerHTML='<div class="cards">'+
       statCard('Vendors',Number(k.vendors).toLocaleString('en-IN'))+
@@ -708,7 +710,7 @@ function renderVendor(){
 /* ---------- GST ---------- */
 function renderGST(){
   setContent(pagehead('GST','GST collected, taxable revenue & rate split — live','gst')+dateBar()+'<div id="gs">'+loadingBox()+'</div>');
-  api({action:'getGST',token:tGet(),from:DATE_FROM,to:DATE_TO}).then(d=>{
+  dapi('getGST').then(d=>{
     if(!d.ok)return($('gs').innerHTML=errBox(d)); const k=d.kpis;
     $('gs').innerHTML='<div class="cards">'+
       statCard('GST Collected',inrS(k.gstCollected))+
@@ -733,7 +735,7 @@ function renderGST(){
 /* ---------- Expense ---------- */
 function renderExpense(){
   setContent(pagehead('Expense','Recorded + unrecorded expenses — live','expense')+dateBar()+'<div id="ex">'+loadingBox()+'</div>');
-  api({action:'getExpense',token:tGet(),from:DATE_FROM,to:DATE_TO}).then(d=>{
+  dapi('getExpense').then(d=>{
     if(!d.ok)return($('ex').innerHTML=errBox(d)); const k=d.kpis;
     $('ex').innerHTML='<div class="cards">'+
       statCard('Total Expense',inrS(k.total))+
@@ -759,7 +761,7 @@ function renderExpense(){
 let LAST_REPORT=null;
 function renderReports(){
   setContent(pagehead('Reports','Consolidated summary — live','reports')+dateBar()+'<div id="rp">'+loadingBox()+'</div>');
-  api({action:'getReports',token:tGet(),from:DATE_FROM,to:DATE_TO}).then(d=>{
+  dapi('getReports').then(d=>{
     if(!d.ok)return($('rp').innerHTML=errBox(d)); LAST_REPORT=d; const s=d.summary;
     $('rp').innerHTML='<div class="cards">'+
       statCard('Revenue',inrS(s.revenue))+
