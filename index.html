@@ -9,9 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://code.highcharts.com/highcharts.js"></script>
-<script src="https://code.highcharts.com/highcharts-3d.js"></script>
-<script src="https://code.highcharts.com/modules/cylinder.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
 <style>
 :root{
   --bg:#070710; --txt:#eef0f7; --muted:#9aa0b4;
@@ -382,7 +380,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
 <script>
 /* ===================== CONFIG ===================== */
-const API = "https://script.google.com/macros/s/AKfycbyeYkxRCa6YOZxzZqeU9trT6qUmkS4exBRpdFxjnJsTkZgJ4IpYwB195o8Wimt3aOrS/exec";   // GAS /exec URL
+const API = "https://script.google.com/macros/s/AKfycbyD5P13OFALCXS2DkUvzgn0jhkdRrucCDwYQDJxn91erpBtoHoIpIKlolr8buOtARSR/exec";   // GAS /exec URL
 const DEVICE = (navigator.userAgent||"Unknown")+" | "+(navigator.platform||"");
 
 /* ===================== CORE ===================== */
@@ -611,97 +609,69 @@ function inrS(n){ n=n||0; var a=Math.abs(n);
   if(a>=1e5) return '₹'+(n/1e5).toFixed(2)+' L';
   if(a>=1e3) return '₹'+(n/1e3).toFixed(1)+'k';
   return '₹'+Math.round(n); }
-/* ---------- Highcharts 3D theme + helpers ---------- */
+/* ---------- Apache ECharts helpers (Power-BI style, dark glass) ---------- */
 const HC_COLORS=['#7c5cff','#46b5ff','#37d399','#ffb547','#ff5d6c','#c9bdff','#7ad0ff','#ff8fa3'];
-if(typeof Highcharts!=='undefined'){
-  Highcharts.setOptions({
-    colors:HC_COLORS,
-    chart:{backgroundColor:'transparent',style:{fontFamily:'Jost, sans-serif'},spacing:[14,8,10,8]},
-    title:{text:undefined}, credits:{enabled:false},
-    legend:{itemStyle:{color:'#cfd3e2',fontWeight:'500',fontFamily:'Jost, sans-serif'},itemHoverStyle:{color:'#fff'}},
-    xAxis:{labels:{style:{color:'#9aa0b4',fontFamily:'Jost, sans-serif'}},lineColor:'rgba(255,255,255,.12)',tickColor:'rgba(255,255,255,.12)',gridLineColor:'rgba(255,255,255,.05)'},
-    yAxis:{labels:{style:{color:'#9aa0b4',fontFamily:'Jost, sans-serif'}},gridLineColor:'rgba(255,255,255,.06)',title:{text:null}},
-    tooltip:{backgroundColor:'rgba(20,20,32,.96)',borderColor:'rgba(255,255,255,.15)',borderRadius:10,style:{color:'#eef0f7',fontFamily:'Jost, sans-serif'}},
-    plotOptions:{series:{animation:{duration:750}}}
-  });
+var _ECH={};
+function echEl(id,h){ var el=$(id); if(el) el.style.height=(h||320)+'px'; return el; }
+function echInit(id,h){ var el=echEl(id,h); if(!el||typeof echarts==='undefined')return null; if(_ECH[id]){try{_ECH[id].dispose();}catch(e){}} var c=echarts.init(el,null,{renderer:'canvas'}); _ECH[id]=c; return c; }
+window.addEventListener('resize',function(){ for(var k in _ECH){ try{_ECH[k].resize();}catch(e){} } });
+var TT={backgroundColor:'rgba(20,20,32,.96)',borderColor:'rgba(124,92,255,.4)',textStyle:{color:'#eef0f7',fontFamily:'Jost'}};
+function axL(money){ return {color:'#7e8497',fontFamily:'Jost',formatter:function(v){return money?inrS(v):Number(v).toLocaleString('en-IN');}}; }
+/* line / area trend (multi-series) */
+function hcArea(id,cats,series){
+  var c=echInit(id,300); if(!c)return;
+  c.setOption({ grid:{left:8,right:18,top:series.length>1?32:14,bottom:24,containLabel:true},
+    legend:series.length>1?{data:series.map(function(s){return s.name;}),textStyle:{color:'#cfd3e2',fontFamily:'Jost'},top:0}:{show:false},
+    tooltip:Object.assign({trigger:'axis',valueFormatter:function(v){return inr(v);}},TT),
+    xAxis:{type:'category',data:cats,boundaryGap:false,axisLabel:{color:'#9aa0b4',fontFamily:'Jost',hideOverlap:true,rotate:(cats.length||0)>12?38:0},axisLine:{lineStyle:{color:'rgba(255,255,255,.12)'}}},
+    yAxis:{type:'value',axisLabel:axL(true),splitLine:{lineStyle:{color:'rgba(255,255,255,.06)'}}},
+    series:series.map(function(s,i){var col=s.color||HC_COLORS[i%HC_COLORS.length];return {name:s.name,type:'line',smooth:true,showSymbol:false,data:s.data,lineStyle:{width:2.6,color:col},itemStyle:{color:col},areaStyle:{color:new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:col+'80'},{offset:1,color:col+'05'}])}};}) });
 }
-function hcEl(elId,h){ var el=$(elId); if(el) el.style.height=(h||320)+'px'; return el; }
-function grad(c){ return {linearGradient:{x1:0,x2:0,y1:0,y2:1},stops:[[0,Highcharts.color(c).setOpacity(.55).get('rgba')],[1,Highcharts.color(c).setOpacity(.04).get('rgba')]]}; }
-function hcArea(elId,cats,series){
-  if(typeof Highcharts==='undefined')return; var el=hcEl(elId,300); if(!el)return;
-  Highcharts.chart(el,{chart:{type:'area'},
-    xAxis:{categories:cats,tickInterval:Math.ceil((cats.length||1)/8)||1,labels:{rotation:-35}},
-    yAxis:{labels:{formatter:function(){return inrS(this.value);}}},
-    legend:{enabled:series.length>1},
-    plotOptions:{area:{lineWidth:2.5,marker:{enabled:false,states:{hover:{enabled:true,radius:4}}}}},
-    series:series.map(function(s){return {name:s.name,data:s.data,color:s.color,fillColor:grad(s.color)};}),
-    tooltip:{shared:true,formatter:function(){var pts=this.points||[this];var h='<b>'+this.x+'</b>';pts.forEach(function(p){h+='<br/>'+p.series.name+': <b>'+inr(p.y)+'</b>';});return h;}}});
+/* horizontal bar — sorted desc input (cats[0]=highest), data labels */
+function hbar(id,cats,data,color,money){
+  var n=cats.length||1; var c=echInit(id,Math.max(200,n*30+44)); if(!c)return;
+  var cc=cats.slice().reverse(), dd=data.slice().reverse().map(function(x){return Math.round(x);});
+  c.setOption({ grid:{left:8,right:70,top:6,bottom:6,containLabel:true},
+    tooltip:Object.assign({trigger:'item',formatter:function(p){return p.name+'<br/><b>'+(money?inr(p.value):Number(p.value).toLocaleString('en-IN'))+'</b>';}},TT),
+    xAxis:{type:'value',axisLabel:axL(money),splitLine:{lineStyle:{color:'rgba(255,255,255,.05)'}}},
+    yAxis:{type:'category',data:cc,axisLabel:{color:'#cfd3e2',fontFamily:'Jost',fontSize:11,width:150,overflow:'truncate'},axisLine:{lineStyle:{color:'rgba(255,255,255,.08)'}},axisTick:{show:false}},
+    series:[{type:'bar',data:dd,barMaxWidth:20,itemStyle:{borderRadius:[0,6,6,0],color:color||new echarts.graphic.LinearGradient(1,0,0,0,[{offset:0,color:'#7c5cff'},{offset:1,color:'#46b5ff'}])},
+      label:{show:true,position:'right',color:'#cfd3e2',fontFamily:'Jost',fontSize:11,formatter:function(p){return money?inrS(p.value):Number(p.value).toLocaleString('en-IN');}}}] });
 }
-function hcBarH(elId,cats,data,color,money){
-  if(typeof Highcharts==='undefined')return; var el=hcEl(elId,Math.max(240,(cats.length||1)*38+60)); if(!el)return;
-  Highcharts.chart(el,{chart:{type:'bar',options3d:{enabled:true,alpha:6,beta:14,depth:42,viewDistance:25}},
-    xAxis:{categories:cats},yAxis:{labels:{formatter:function(){return money?inrS(this.value):this.value;}}},legend:{enabled:false},
-    plotOptions:{bar:{depth:42,borderRadius:3,colorByPoint:true,edgeWidth:0,grouping:false}},
-    series:[{name:'',data:data}],
-    tooltip:{formatter:function(){return '<b>'+this.x+'</b><br/>'+(money?inr(this.y):Number(this.y).toLocaleString('en-IN'));}}});
+/* ranked horizontal bar (#1, #2 …) */
+function hcBarV(id,names,values,money){ hcCylinder; var ranked=names.map(function(n,i){return '#'+(i+1)+'  '+n;}); hbar(id,ranked,values,null,money); }
+function hcCylinder(id,names,values,money){ hbar(id,names,values,null,money); }
+/* vertical column — short categories (months) */
+function hcColumn(id,cats,data,color,money){
+  var c=echInit(id,320); if(!c)return;
+  c.setOption({ grid:{left:8,right:14,top:16,bottom:24,containLabel:true},
+    tooltip:Object.assign({trigger:'axis',valueFormatter:function(v){return money?inr(v):Number(v).toLocaleString('en-IN');}},TT),
+    xAxis:{type:'category',data:cats,axisLabel:{color:'#9aa0b4',fontFamily:'Jost',rotate:(cats.length||0)>8?38:0,hideOverlap:true},axisLine:{lineStyle:{color:'rgba(255,255,255,.12)'}}},
+    yAxis:{type:'value',axisLabel:axL(money),splitLine:{lineStyle:{color:'rgba(255,255,255,.06)'}}},
+    series:[{type:'bar',data:data.map(function(x){return Math.round(x);}),barMaxWidth:40,itemStyle:{borderRadius:[6,6,0,0],color:color||new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#9a7bff'},{offset:1,color:'#5b3fd6'}])},
+      label:{show:true,position:'top',color:'#cfd3e2',fontFamily:'Jost',fontSize:11,formatter:function(p){return money?inrS(p.value):Number(p.value).toLocaleString('en-IN');}}}] });
 }
-function hcColumn(elId,cats,data,color,money){
-  if(typeof Highcharts==='undefined')return; var el=hcEl(elId,330); if(!el)return;
-  Highcharts.chart(el,{chart:{type:'column',options3d:{enabled:true,alpha:14,beta:16,depth:60,viewDistance:25}},
-    xAxis:{categories:cats,labels:{rotation:-40}},
-    yAxis:{labels:{formatter:function(){return money?inrS(this.value):this.value;}}},legend:{enabled:false},
-    plotOptions:{column:{depth:50,borderRadius:2,color:color||'#7c5cff',edgeWidth:0}},
-    series:[{name:'',data:data}],
-    tooltip:{formatter:function(){return '<b>'+this.x+'</b><br/>'+(money?inr(this.y):Number(this.y).toLocaleString('en-IN'));}}});
+/* flat pie/donut — only for <=5 categories (GST rates) */
+function hcPie3D(id,labels,data,money){
+  var c=echInit(id,330); if(!c)return;
+  var pts=labels.map(function(l,i){return {name:l,value:Math.round(data[i])};});
+  c.setOption({ tooltip:Object.assign({trigger:'item',formatter:function(p){return p.name+': <b>'+(money?inr(p.value):p.value)+'</b> ('+p.percent+'%)';}},TT),
+    legend:{bottom:0,textStyle:{color:'#cfd3e2',fontFamily:'Jost'}}, color:HC_COLORS,
+    series:[{type:'pie',radius:['42%','70%'],center:['50%','46%'],data:pts,label:{color:'#cfd3e2',fontFamily:'Jost',formatter:function(p){return money?inrS(p.value):p.value;}},itemStyle:{borderColor:'rgba(7,7,16,.6)',borderWidth:2}}] });
 }
-function hcPie3D(elId,labels,data,money){
-  if(typeof Highcharts==='undefined')return; var el=hcEl(elId,340); if(!el)return;
-  var pts=labels.map(function(l,i){return {name:l,y:Math.round(data[i])};});
-  Highcharts.chart(el,{chart:{type:'pie',options3d:{enabled:true,alpha:52,beta:0}},
-    plotOptions:{pie:{depth:48,innerSize:'42%',center:['50%','50%'],size:'85%',borderWidth:1,borderColor:'rgba(7,7,16,.5)',
-      dataLabels:{enabled:true,distance:14,style:{color:'#cfd3e2',textOutline:'none',fontWeight:'500',fontFamily:'Jost, sans-serif'},
-        formatter:function(){return this.point.name+': '+(money?inrS(this.y):Number(this.y).toLocaleString('en-IN'));}}}},
-    series:[{name:'',data:pts}],
-    tooltip:{formatter:function(){return '<b>'+this.point.name+'</b><br/>'+(money?inr(this.y):Number(this.y).toLocaleString('en-IN'))+' ('+this.percentage.toFixed(1)+'%)';}}});
+/* treemap (inventory value distribution) */
+function echTreemap(id,data){
+  var c=echInit(id,360); if(!c)return;
+  c.setOption({ tooltip:Object.assign({formatter:function(p){return p.name+'<br/><b>'+inr(p.value)+'</b>';}},TT),
+    series:[{type:'treemap',roam:false,nodeClick:false,breadcrumb:{show:false},data:data.map(function(d){return {name:d.name,value:Math.round(d.value)};}),
+      label:{color:'#fff',fontFamily:'Jost',fontSize:11,formatter:function(p){return p.name+'\n'+inrS(p.value);}},
+      levels:[{itemStyle:{borderColor:'rgba(7,7,16,.6)',borderWidth:2,gapWidth:2}}], color:HC_COLORS}] });
 }
-/* Premium enterprise vertical bar — gradient, rounded top, value labels, rank (no toy 3D) */
-function hcBarV(elId,names,values,money){
-  if(typeof Highcharts==='undefined')return; var el=hcEl(elId,360); if(!el)return;
-  var cats=names.map(function(n,i){return '#'+(i+1)+'  '+n;});
-  Highcharts.chart(el,{chart:{type:'column'},
-    xAxis:{categories:cats,labels:{rotation:-45,style:{fontSize:'11px',color:'#9aa0b4',fontFamily:'Jost, sans-serif'}},lineColor:'rgba(255,255,255,.08)',tickLength:0},
-    yAxis:{gridLineColor:'rgba(255,255,255,.05)',labels:{style:{color:'#7e8497'},formatter:function(){return money?inrS(this.value):this.value;}},title:{text:null}},
-    legend:{enabled:false},
-    plotOptions:{column:{borderRadius:8,pointPadding:.12,groupPadding:.1,borderWidth:0,
-      color:{linearGradient:{x1:0,x2:0,y1:0,y2:1},stops:[[0,'#9a7bff'],[1,'#5b3fd6']]},
-      shadow:{color:'rgba(124,92,255,.22)',width:7,offsetX:0,offsetY:3,opacity:.5},
-      dataLabels:{enabled:true,inside:false,y:-4,crop:false,overflow:'allow',
-        style:{color:'#cfd3e2',fontWeight:'600',fontFamily:'Jost, sans-serif',textOutline:'none',fontSize:'11px'},
-        formatter:function(){return money?inrS(this.y):Number(this.y).toLocaleString('en-IN');}},
-      states:{hover:{brightness:.14}}}},
-    series:[{name:'',data:values.map(x=>Math.round(x))}],
-    tooltip:{useHTML:true,backgroundColor:'rgba(20,20,32,.96)',borderColor:'rgba(124,92,255,.4)',
-      formatter:function(){return '<div style="font-family:Jost;padding:2px 4px"><b>'+this.key+'</b><br/><span style="font-size:15px;color:#c9bdff">'+(money?inr(this.y):Number(this.y).toLocaleString('en-IN'))+'</span></div>';}}});
-}
-/* 3D cylinder bars (premium, real — closest to a cylindrical 3D budget chart) */
-function hcCylinder(elId,names,values,money){
-  if(typeof Highcharts==='undefined'||!Highcharts.seriesTypes.cylinder)return hcBarV(elId,names,values,money);
-  var el=hcEl(elId,360); if(!el)return;
-  Highcharts.chart(el,{chart:{type:'cylinder',options3d:{enabled:true,alpha:15,beta:18,depth:60,viewDistance:25}},
-    xAxis:{categories:names,labels:{style:{color:'#9aa0b4',fontFamily:'Jost, sans-serif'}}},
-    yAxis:{gridLineColor:'rgba(255,255,255,.06)',labels:{style:{color:'#7e8497'},formatter:function(){return money?inrS(this.value):this.value;}},title:{text:null}},
-    legend:{enabled:false},
-    plotOptions:{cylinder:{depth:45,colorByPoint:true,
-      dataLabels:{enabled:true,style:{color:'#cfd3e2',textOutline:'none',fontFamily:'Jost, sans-serif',fontWeight:'600'},formatter:function(){return money?inrS(this.y):Number(this.y).toLocaleString('en-IN');}}}},
-    colors:HC_COLORS,
-    series:[{name:'',data:values.map(x=>Math.round(x))}],
-    tooltip:{formatter:function(){return '<b>'+this.x+'</b><br/>'+(money?inr(this.y):Number(this.y).toLocaleString('en-IN'));}}});
-}
-function drawTrend(elId,trend){ trend=trend||[]; hcArea(elId,trend.map(x=>x.date),[
-  {name:'Net Sales',data:trend.map(x=>Math.round(x.sales)),color:'#7c5cff'},
-  {name:'Gross Profit',data:trend.map(x=>Math.round(x.gp)),color:'#46b5ff'}]); }
-function donut(elId,labels,series,money){ hcPie3D(elId,labels,series,money); }
-function hbar(elId,cats,data,color,money){ hcBarH(elId,cats,data,color,money); }
+function echHist(id,labels,counts){ hcColumn(id,labels,counts,'#46b5ff',false); }
+function drawTrend(id,trend){ trend=trend||[]; hcArea(id,trend.map(function(x){return x.date;}),[
+  {name:'Net Sales',data:trend.map(function(x){return Math.round(x.sales);}),color:'#7c5cff'},
+  {name:'Gross Profit',data:trend.map(function(x){return Math.round(x.gp);}),color:'#46b5ff'}]); }
+function donut(id,labels,series,money){ hcPie3D(id,labels,series,money); }
 function statCard(label,n,sub){return '<div class="stat"><div class="n">'+n+'</div><div class="l">'+label+(sub?' · '+sub:'')+'</div><div class="bar"></div></div>';}
 function pagehead(title,sub,tab){return '<div class="pagehead"><div><h3>'+esc(title)+'</h3><div class="sub">'+esc(sub)+'</div></div>'+
   '<button class="btn ghost sm" onclick="refreshTab()">↻ Refresh</button></div>';}
@@ -743,29 +713,41 @@ function renderOverview(){
 
 /* ---------- Sales Analytics (live) ---------- */
 function renderSales(){
-  setContent(pagehead('Welcome, '+ME.fullName.split(' ')[0]+' 👋','Sales analytics — revenue, profit & performance','sales')+dateBar()+'<div id="sa">'+loadingBox()+'</div>');
+  setContent(pagehead('Welcome, '+ME.fullName.split(' ')[0]+' 👋','Sales analytics — live from Master_Sales_Sheet','sales')+dateBar()+'<div id="sa">'+loadingBox()+'</div>');
   dapi('getSales').then(d=>{
     if(!d.ok)return ($('sa').innerHTML=errBox(d));
     const k=d.kpis;
     $('sa').innerHTML=
       '<div class="cards">'+
-        statCard('Revenue',inrS(k.revenue),'In. GST')+
+        statCard('Total Revenue',inrS(k.revenue),'In. GST')+
         statCard('Gross Sale',inrS(k.grossSale),'Ex. GST')+
         statCard('Gross Profit',inrS(k.grossProfit))+
         statCard('Margin',k.margin.toFixed(1)+'%')+
         statCard('Qty Sold',Number(k.qty).toLocaleString('en-IN'),'fabric meter=1')+
-        statCard('Orders',Number(k.orders).toLocaleString('en-IN'))+
-        statCard('Avg Bill',inrS(k.abv))+
-        statCard('GST',inrS(k.gst))+
+        statCard('Total Bills',Number(k.orders).toLocaleString('en-IN'))+
+        statCard('Total Customers',Number(k.customers).toLocaleString('en-IN'))+
+        statCard('GST Collected',inrS(k.gst))+
       '</div>'+
-      '<div class="chartbox"><h4>📈 Sales trend</h4><div id="saTrend"></div></div>'+
       '<div class="grid2">'+
-        '<div class="chartbox"><h4>🏆 Top products (by gross sale)</h4><div id="saTop"></div></div>'+
-        '<div class="chartbox"><h4>👗 Sales-girl performance</h4><div id="saGirls"></div></div>'+
+        '<div class="chartbox"><h4>📈 Monthly revenue trend</h4><div id="saMonth"></div></div>'+
+        '<div class="chartbox"><h4>📅 Daily revenue trend</h4><div id="saDaily"></div></div>'+
+      '</div>'+
+      '<div class="chartbox"><h4>🏭 Revenue by distributor — top 20</h4><div id="saDist"></div></div>'+
+      '<div class="grid2">'+
+        '<div class="chartbox"><h4>👗 Revenue by product — top 20</h4><div id="saPRev"></div></div>'+
+        '<div class="chartbox"><h4>📦 Quantity sold by product — top 20</h4><div id="saPQty"></div></div>'+
+      '</div>'+
+      '<div class="grid2">'+
+        '<div class="chartbox"><h4>🙋‍♀️ Revenue by sales-girl</h4><div id="saGRev"></div></div>'+
+        '<div class="chartbox"><h4>🙋‍♀️ Quantity by sales-girl</h4><div id="saGQty"></div></div>'+
       '</div>';
-    drawTrend('saTrend',d.trend);
-    const tp=(d.topProducts||[]); hbar('saTop',tp.map(x=>x.name),tp.map(x=>Math.round(x.gross)),null,true);
-    const sg=(d.salesGirls||[]); hcColumn('saGirls',sg.map(x=>x.name),sg.map(x=>Math.round(x.sales)),'#46b5ff',true);
+    const mt=d.monthlyTrend||[]; hcArea('saMonth',mt.map(x=>x.m),[{name:'Revenue',data:mt.map(x=>x.rev),color:'#7c5cff'}]);
+    const dt=d.dailyTrend||[]; hcArea('saDaily',dt.map(x=>x.date),[{name:'Revenue',data:dt.map(x=>x.rev),color:'#46b5ff'}]);
+    const rd=d.revByDist||[]; hbar('saDist',rd.map(x=>x.name),rd.map(x=>x.value),null,true);
+    const pr=d.revByProduct||[]; hbar('saPRev',pr.map(x=>x.name),pr.map(x=>x.value),null,true);
+    const pq=d.qtyByProduct||[]; hbar('saPQty',pq.map(x=>x.name),pq.map(x=>x.value),'#46b5ff',false);
+    const gr=d.salesgirlRev||[]; hbar('saGRev',gr.map(x=>x.name),gr.map(x=>x.value),null,true);
+    const gq=d.salesgirlQty||[]; hbar('saGQty',gq.map(x=>x.name),gq.map(x=>x.value),'#37d399',false);
   }).catch(e=>$('sa').innerHTML=connBox(e));
 }
 
@@ -819,19 +801,26 @@ function renderPurchase(){
 
 /* ---------- Customer CRM ---------- */
 function renderCRM(){
-  setContent(pagehead('Customer CRM','Customers, repeats & top spenders — live','crm')+dateBar()+'<div id="cr">'+loadingBox()+'</div>');
-  dapi('getCRM').then(d=>{
-    if(!d.ok)return($('cr').innerHTML=errBox(d)); const k=d.kpis;
+  setContent(pagehead('Customer Analytics','Top spenders, repeat frequency & leaderboard — live','crm')+dateBar()+'<div id="cr">'+loadingBox()+'</div>');
+  dapi('getSales').then(d=>{
+    if(!d.ok)return($('cr').innerHTML=errBox(d));
+    const tc=d.topCustomers||[], cf=d.custFreq||[];
+    const totalCust=d.kpis.customers||0;
+    const repeat=cf.filter(x=>x.bucket.charAt(0)!=='1').reduce((a,b)=>a+b.count,0);
     $('cr').innerHTML='<div class="cards">'+
-      statCard('Total Customers',Number(k.totalCustomers).toLocaleString('en-IN'))+
-      statCard('Repeat Customers',Number(k.repeatCustomers).toLocaleString('en-IN'))+
-      statCard('Repeat Rate',k.repeatRate.toFixed(1)+'%')+
-      statCard('Avg Spend',inrS(k.avgSpend))+
+      statCard('Total Customers',Number(totalCust).toLocaleString('en-IN'))+
+      statCard('Repeat Customers',Number(repeat).toLocaleString('en-IN'))+
+      statCard('Repeat Rate',(totalCust>0?(repeat/totalCust*100):0).toFixed(1)+'%')+
+      statCard('Top Spender',tc.length?esc(tc[0].name.slice(0,14)):'—',tc.length?inrS(tc[0].value):'')+
     '</div>'+
-    '<div class="chartbox"><h4>👑 Top customers by spend</h4><div id="crChart"></div></div>'+
-    '<div class="box"><h4>🧾 Top 25 customers</h4>'+tbl(['#','Customer','Bills','Spend'],
-      (d.topCustomers||[]).map((c,i)=>[(i+1),esc(c.name),Number(c.bills).toLocaleString('en-IN'),inr(c.sales)]))+'</div>';
-    var tc=(d.topCustomers||[]).slice(0,15); hcBarV('crChart',tc.map(x=>x.name),tc.map(x=>x.sales),true);
+    '<div class="grid2">'+
+      '<div class="chartbox"><h4>👑 Top customers by revenue — top 20</h4><div id="crTop"></div></div>'+
+      '<div class="chartbox"><h4>🔁 Customer purchase frequency</h4><div id="crFreq"></div></div>'+
+    '</div>'+
+    '<div class="box"><h4>🧾 Customer revenue leaderboard</h4>'+tbl(['#','Customer','Revenue','Qty purchased'],
+      tc.map((c,i)=>[(i+1),esc(c.name),inr(c.value),Number(c.qty).toLocaleString('en-IN')]))+'</div>';
+    hbar('crTop',tc.map(x=>x.name),tc.map(x=>x.value),null,true);
+    hcColumn('crFreq',cf.map(x=>x.bucket),cf.map(x=>x.count),'#7c5cff',false);
   }).catch(e=>$('cr').innerHTML=connBox(e));
 }
 
@@ -863,8 +852,18 @@ function renderGST(){
       statCard('Purchase GST',inrS(k.purchaseGst),'input tax credit')+
       statCard('Net GST Liability',inrS(k.netLiability),'sales − purchase GST')+
     '</div>'+
-    '<div class="chartbox"><h4>📈 GST captured trend</h4><div id="gsTrend"></div></div>';
+    '<div class="grid2">'+
+      '<div class="chartbox"><h4>📈 GST collection trend (monthly)</h4><div id="gsMonth"></div></div>'+
+      '<div class="chartbox"><h4>📅 GST captured trend (daily)</h4><div id="gsTrend"></div></div>'+
+    '</div>'+
+    '<div class="grid2">'+
+      '<div class="chartbox"><h4>👗 GST by product — top 20</h4><div id="gsProd"></div></div>'+
+      '<div class="chartbox"><h4>🏭 GST by distributor — top 20</h4><div id="gsDist"></div></div>'+
+    '</div>';
+    var gm=d.gstMonthly||[]; hcArea('gsMonth',gm.map(x=>x.m),[{name:'GST',data:gm.map(x=>x.gst),color:'#7c5cff'}]);
     var tr=d.trend||[]; hcArea('gsTrend',tr.map(x=>x.date),[{name:'GST',data:tr.map(x=>Math.round(x.gst)),color:'#37d399'}]);
+    var gp=d.gstByProduct||[]; hbar('gsProd',gp.map(x=>x.name),gp.map(x=>x.value),'#37d399',true);
+    var gd=d.gstByDist||[]; hbar('gsDist',gd.map(x=>x.name),gd.map(x=>x.value),null,true);
   }).catch(e=>$('gs').innerHTML=connBox(e));
 }
 
@@ -881,12 +880,12 @@ function renderExpense(){
     '</div>'+
     '<div class="chartbox"><h4>📉 Expense trend</h4><div id="exTrend"></div></div>'+
     '<div class="grid2">'+
-      '<div class="chartbox"><h4>💸 By category</h4><div id="exCat"></div></div>'+
+      '<div class="chartbox"><h4>💸 Expense breakdown by category</h4><div id="exCat"></div></div>'+
       '<div class="box"><h4>📋 Category breakdown</h4>'+tbl(['Category','Amount'],
         (d.cats||[]).map(c=>[esc(c.name),inr(c.amount)]))+'</div>'+
     '</div>';
-    var tr=d.trend||[]; hcColumn('exTrend',tr.map(x=>x.date),tr.map(x=>Math.round(x.amount)),'#ffb547',true);
-    var c=d.cats||[]; donut('exCat',c.map(x=>x.name),c.map(x=>x.amount),true);
+    var tr=d.trend||[]; hcArea('exTrend',tr.map(x=>x.date),[{name:'Expense',data:tr.map(x=>Math.round(x.amount)),color:'#ffb547'}]);
+    var c=d.cats||[]; hbar('exCat',c.map(x=>x.name),c.map(x=>x.amount),'#ff8f6b',true);
   }).catch(e=>$('ex').innerHTML=connBox(e));
 }
 
@@ -1302,14 +1301,30 @@ function renderInventory(){
 function loadInventory(silent){
   (silent?apiS:api)({action:'stockList',token:tGet()}).then(d=>{
     if(!d||!d.ok)return(silent?null:($('iv').innerHTML=errBox(d))); const k=d.kpis;
+    var inv=d.inventory||[];
+    var byD={}; inv.forEach(m=>{var dd=(m.dist||'Unknown'); byD[dd]=(byD[dd]||0)+(m.value||0);});
+    var distArr=Object.keys(byD).map(x=>({name:x,value:byD[x]})).sort((a,b)=>b.value-a.value).slice(0,20);
+    var stockArr=inv.slice().filter(m=>m.current>0).sort((a,b)=>b.current-a.current).slice(0,20);
+    var tmArr=inv.slice().filter(m=>m.value>0).sort((a,b)=>b.value-a.value).slice(0,30).map(m=>({name:m.item,value:m.value}));
+    var dead=inv.slice().filter(m=>m.current>0).sort((a,b)=>b.value-a.value).slice(0,25);
     $('iv').innerHTML='<div class="cards">'+
       statCard('Items',k.items)+statCard('Units in stock',k.units)+
       statCard('Stock Value',inrS(k.stockValue))+statCard('Low stock',k.low,'≤2 left')+
       statCard('Purchased today',inrS(k.purToday))+statCard('Sold today',inrS(k.salToday))+
     '</div>'+
-    '<div class="box"><h4>📦 Current stock</h4>'+tbl(['Item','Type','Purchased','Sold','Current','Sell','Value'],
-      (d.inventory||[]).map(m=>[esc(m.item),esc(m.type||'—'),m.purchased,m.sold,
+    '<div class="grid2">'+
+      '<div class="chartbox"><h4>🏭 Inventory value by distributor</h4><div id="ivDist"></div></div>'+
+      '<div class="chartbox"><h4>📦 Current stock by product — top 20</h4><div id="ivStock"></div></div>'+
+    '</div>'+
+    '<div class="chartbox"><h4>🗂️ Inventory value distribution</h4><div id="ivTree"></div></div>'+
+    '<div class="box"><h4>🧊 Dead stock — highest value sitting in stock</h4>'+tbl(['Item','Current','Value','Distributor'],
+      dead.map(m=>[esc(m.item),'<b style="color:'+(m.current<=2?'#ffce85':'#7fe9c0')+'">'+m.current+'</b>',inr(m.value),esc(m.dist||'—')]))+'</div>'+
+    '<div class="box"><h4>📋 Current stock (all)</h4>'+tbl(['Item','Type','Purchased','Sold','Current','Sell','Value'],
+      inv.map(m=>[esc(m.item),esc(m.type||'—'),m.purchased,m.sold,
         '<b style="color:'+(m.current<=0?'#ff97a2':(m.current<=2?'#ffce85':'#7fe9c0'))+'">'+m.current+'</b>',inr(m.sell),inr(m.value)]))+'</div>';
+    hbar('ivDist',distArr.map(x=>x.name),distArr.map(x=>x.value),null,true);
+    hbar('ivStock',stockArr.map(x=>x.item),stockArr.map(x=>x.current),'#46b5ff',false);
+    echTreemap('ivTree',tmArr);
   }).catch(e=>{ if(!silent)$('iv').innerHTML=connBox(e); });
 }
 
@@ -1384,21 +1399,8 @@ function drawIA3D(dates,series){
   if(!$('ia-chart'))return;
   if(!dates.length){ $('ia-chart').innerHTML='<p class="desc">No sales in this selection / date range.</p>'; return; }
   const palette=['#7c5cff','#46b5ff','#37d399','#ffb347','#ff6f91','#b388ff','#00d4c7','#ff5d6c'];
-  const hs=series.map((s,i)=>({name:s.name,
-    data:s.points.map(p=>({y:p.amount,qty:p.qty,orders:p.orders})),
-    color:palette[i%palette.length]}));
-  Highcharts.chart($('ia-chart'),{
-    chart:{type:'column',options3d:{enabled:true,alpha:12,beta:14,depth:60,viewDistance:30},zoomType:'xy',backgroundColor:'transparent'},
-    title:{text:null},credits:{enabled:false},
-    xAxis:{categories:dates,labels:{style:{color:'#9aa0b4',fontFamily:'Jost, sans-serif'}},lineColor:'rgba(255,255,255,.08)'},
-    yAxis:{gridLineColor:'rgba(255,255,255,.05)',labels:{style:{color:'#7e8497'},formatter:function(){return inrS(this.value);}},title:{text:null}},
-    legend:{enabled:series.length>1,itemStyle:{color:'#cfd3e2',fontFamily:'Jost, sans-serif'}},
-    plotOptions:{column:{depth:40,borderWidth:0,borderRadius:4,states:{hover:{brightness:.12}}}},
-    tooltip:{useHTML:true,backgroundColor:'rgba(20,20,32,.96)',borderColor:'rgba(124,92,255,.4)',
-      formatter:function(){return '<div style="font-family:Jost;padding:3px 5px"><b>'+this.series.name+'</b><br/>'+
-        '📅 '+this.key+'<br/>💰 '+inr(this.y)+'<br/>📦 Qty: '+(this.point.qty||0)+'<br/>🧾 Orders: '+(this.point.orders||0)+'</div>';}},
-    series:hs
-  });
+  var s=series.map(function(x,i){return {name:x.name,data:x.points.map(function(p){return Math.round(p.amount);}),color:palette[i%palette.length]};});
+  hcArea('ia-chart',dates,s);
 }
 let USERS=[],ROLES_AVAIL=['Sales Executive','Accountant','Manager'];
 function renderUsers(){
